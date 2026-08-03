@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Output
+output/
+
+# Large pre-computed embeddings (regenerate with RNA-FM)
+data/rnafm/*
+!data/rnafm/.gitkeep
+
+# Figures (regeneratable)
+figures/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

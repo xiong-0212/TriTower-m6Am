@@ -1,0 +1,49 @@
+data:
+  dir: "data"
+  train_ss: "data/train_ss_41.fasta"
+  test_ss: "data/test_ss_41.fasta"
+  train_labels: "data/train_labels.npy"
+  test_labels: "data/test_labels.npy"
+  rnafm_train: "data/rnafm/rnafm_train_ss_41.npy"
+  rnafm_test: "data/rnafm/rnafm_test_ss_41.npy"
+
+output:
+  dir: "output"
+
+model:
+  seq_len: 41
+  rnafm:
+    input_dim: 640
+    proj_dim: 96
+    cnn_channels: 48
+  onehot:
+    input_dim: 4
+    hidden_dim: 64
+    num_layers: 2
+  rgcn:
+    node_dim: 21
+    hidden_dim: 64
+    num_relations: 3
+    num_bases: 3
+    edge_dropout: 0.1
+
+training:
+  seed: 123
+  n_splits: 5
+  epochs: 150
+  lr: 5.0e-4
+  weight_decay: 5.0e-3
+  dropout: 0.4
+  ema_decay: 0.990
+  patience: 50
+  warmup_epochs: 10
+  batch_size: 64
+  num_workers: 4
+  label_smoothing: 0.08
+  pos_weight_cap: 3.0
+
+dataset:
+  n_train_pos: 3700
+  n_train_neg: 37000
+  n_test_pos: 320
+  n_test_neg: 320
