@@ -10,6 +10,19 @@ TriTower-m6Am combines three complementary towers through AUC-weighted ensemble 
 - **One-Hot BiLSTM Tower**: Bidirectional LSTM capturing sequential dependencies from one-hot encoded nucleotides
 - **RGCN Tower**: Relational Graph Convolutional Network modeling RNA secondary structure with typed edges (backbone, base-pairing, neighborhood)
 
+## Environment
+
+| Component | Version |
+|-----------|---------|
+| Python | 3.9+ (tested on 3.13) |
+| PyTorch | 2.0+ |
+| CUDA | 11.8 / 12.1 |
+| PyTorch Geometric | 2.4+ |
+| scikit-learn | 1.3+ |
+| NumPy | 1.24+ |
+
+**Hardware:** A single NVIDIA GPU with 8+ GB VRAM is recommended. Training on CPU is possible but significantly slower.
+
 ## Installation
 
 ```bash
