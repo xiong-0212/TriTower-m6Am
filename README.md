@@ -30,8 +30,29 @@ pip install -r requirements.txt
 ```
 
 Additional dependencies:
-- [RNA-FM](https://github.com/ml4bio/RNA-FM) for embedding extraction
+- [RNA-FM](https://github.com/ml4bio/RNA-FM) for embedding extraction (pretrained weights are auto-downloaded by the `fm` package)
 - [ViennaRNA](https://www.tno.uni-vie.ac.at/cgi-bin/RNA/RNAfold.cgi) for secondary structure prediction
+
+## Pretrained Checkpoints
+
+Download the trained TriTower-m6Am model checkpoints (seed=123, 5-fold CV) from [GitHub Releases](https://github.com/xiong-0212/TriTower-m6Am/releases):
+
+```bash
+# Download TriTower-m6Am_checkpoints.zip from Releases, then:
+mkdir -p output
+unzip TriTower-m6Am_checkpoints.zip -d output/
+# Results in: output/ckpt_seed123/
+```
+
+With checkpoints in place, training will automatically detect them and skip to evaluation (`-- SKIP (checkpoint found)`).
+
+### Inference Using Pretrained Weights
+
+```bash
+python train.py
+# Skips training, loads all 5-fold checkpoints, averages predictions,
+# saves results to output/final_result.json
+```
 
 ### RNA-FM Embedding Extraction
 
