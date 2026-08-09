@@ -183,26 +183,30 @@ def build_structural_node_features(sequence, ss):
     return torch.tensor(features, dtype=torch.float32)
 
 
-def build_rgcn_graph(sequence, ss, seq_len=41):
+def build_rgcn_graph(sequence, ss, seq_len=41, edge_types=(0, 1, 2)):
+    edge_types = set(edge_types)
     x = build_structural_node_features(sequence, ss)
     pairs = parse_base_pairs(ss)
     src, dst, etypes = [], [], []
 
-    for i in range(seq_len - 1):
-        src.extend([i, i + 1])
-        dst.extend([i + 1, i])
-        etypes.extend([0, 0])
+    if 0 in edge_types:
+        for i in range(seq_len - 1):
+            src.extend([i, i + 1])
+            dst.extend([i + 1, i])
+            etypes.extend([0, 0])
 
-    for i, j in pairs.items():
-        if i < j:
-            src.extend([i, j])
-            dst.extend([j, i])
-            etypes.extend([1, 1])
+    if 1 in edge_types:
+        for i, j in pairs.items():
+            if i < j:
+                src.extend([i, j])
+                dst.extend([j, i])
+                etypes.extend([1, 1])
 
-    for i in range(seq_len - 2):
-        src.extend([i, i + 2])
-        dst.extend([i + 2, i])
-        etypes.extend([2, 2])
+    if 2 in edge_types:
+        for i in range(seq_len - 2):
+            src.extend([i, i + 2])
+            dst.extend([i + 2, i])
+            etypes.extend([2, 2])
 
     edge_index = torch.tensor([src, dst], dtype=torch.long)
     edge_type = torch.tensor(etypes, dtype=torch.long)

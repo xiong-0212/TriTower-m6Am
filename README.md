@@ -21,7 +21,7 @@ TriTower-m6Am combines three complementary towers through AUC-weighted ensemble 
 | scikit-learn | 1.3+ |
 | NumPy | 1.24+ |
 
-**Hardware:** A single NVIDIA GPU with 8+ GB VRAM is recommended. Training on CPU is possible but significantly slower.
+**Hardware:** Tested on a single NVIDIA GPU with 16 GB VRAM and 128 GB system RAM. Training on CPU is possible but significantly slower.
 
 ## Installation
 
@@ -107,6 +107,9 @@ TriTower-m6Am/
 │   ├── preprocess.py            # Structural feature engineering & graph construction
 │   ├── dataset.py               # Dataset classes & data loading
 │   └── metrics.py               # Evaluation metrics
+├── scripts/
+│   ├── bca_pipeline/            # BCA negative sample construction & imbalanced evaluation
+│   └── interpretability/        # IG attribution, SHAP, motif analysis, tower/edge contribution
 ├── configs/
 │   └── default.yaml             # Hyperparameters and configuration
 └── notebooks/

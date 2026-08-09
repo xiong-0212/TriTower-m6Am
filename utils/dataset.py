@@ -84,7 +84,7 @@ def graph_collate_fn(batch):
     return batched, labels
 
 
-def prepare_tritower_dataset(data_dir="data", seq_len=41):
+def prepare_tritower_dataset(data_dir="data", seq_len=41, edge_types=(0, 1, 2)):
     train_structures, train_labels = load_structures_and_labels(
         os.path.join(data_dir, "train_ss_41.fasta"), 3700, 37000)
     test_structures, test_labels = load_structures_and_labels(
@@ -107,12 +107,12 @@ def prepare_tritower_dataset(data_dir="data", seq_len=41):
     train_graphs = []
     for seq, ss in zip(train_seqs, train_ss):
         ss_c = clean_dot_bracket(ss)
-        train_graphs.append(build_rgcn_graph(seq, ss_c, seq_len))
+        train_graphs.append(build_rgcn_graph(seq, ss_c, seq_len, edge_types))
 
     test_graphs = []
     for seq, ss in zip(test_seqs, test_ss):
         ss_c = clean_dot_bracket(ss)
-        test_graphs.append(build_rgcn_graph(seq, ss_c, seq_len))
+        test_graphs.append(build_rgcn_graph(seq, ss_c, seq_len, edge_types))
 
     return (train_rnafm, train_onehot, train_labels, train_graphs,
             test_rnafm, test_onehot, test_labels, test_graphs)
