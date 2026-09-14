@@ -11,7 +11,7 @@ from sklearn.metrics import roc_auc_score
 from model import RNAFMTower, KmerBiLSTMTower, StructureRGCNTower
 from utils.dataset import (RNAFMDataset, OnehotDataset, GraphDataset,
                            graph_collate_fn, prepare_tritower_dataset)
-from utils.metrics import compute_metrics, find_optimal_mcc, threshold_scan
+from utils.metrics import compute_metrics, find_optimal_mcc, threshold_scan, balanced_oof_threshold
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 SEQ_LEN = 41
@@ -290,7 +290,7 @@ def main():
     print("  TriTower-m6Am (Seed=123)")
     print("  Hyperparameters: lr=5e-4, wd=5e-3, dropout=0.4, ema=0.990")
     print("  RNA-FM Tower + One-hot BiLSTM Tower + RGCN Tower")
-    print("  AUC Weighted Ensemble + Optimal Threshold")
+    print("  AUC Weighted Ensemble + Balanced-OOF Threshold")
     print("=" * 70)
 
     print("Loading TriTower dataset...")
@@ -317,9 +317,10 @@ def main():
 
     print(f"\n--- Per-Tower Test Metrics (seed={SEED}) ---")
     for name in ['rnafm', 'onehot', 'rgcn']:
-        m = compute_metrics(test_labels, test_preds[name])
+        thr = balanced_oof_threshold(train_labels, oof_preds[name])
+        m = compute_metrics(test_labels, test_preds[name], threshold=thr)
         print(f"  {name:8s}: AUC={m['auc']:.4f}  MCC={m['mcc']:.4f}  "
-              f"SN={m['sn']:.4f}  SP={m['sp']:.4f}")
+              f"SN={m['sn']:.4f}  SP={m['sp']:.4f}  (thr={thr:.2f})")
 
     print(f"\n--- AUC Weighted Ensemble ---")
     oof_arr = np.column_stack([oof_preds[n] for n in ['rnafm', 'onehot', 'rgcn']])
@@ -328,10 +329,14 @@ def main():
     auc_w = np.array(oof_aucs)
     auc_w = auc_w / auc_w.sum()
     print(f"  Weights: rnafm={auc_w[0]:.4f} onehot={auc_w[1]:.4f} rgcn={auc_w[2]:.4f}")
+    oof_ensemble = (oof_arr * auc_w).sum(axis=1)
     final_probs = (test_arr * auc_w).sum(axis=1)
 
-    final_metrics = compute_metrics(test_labels, final_probs)
-    print(f"\n  Optimal Threshold: {final_metrics['thresh']:.2f}")
+    # Threshold is selected once on the class-balanced OOF subset and held
+    # fixed for the test set (never tuned on evaluation data).
+    final_thr = balanced_oof_threshold(train_labels, oof_ensemble)
+    final_metrics = compute_metrics(test_labels, final_probs, threshold=final_thr)
+    print(f"\n  Balanced-OOF Threshold: {final_thr:.2f}")
     print(f"  AUC={final_metrics['auc']:.4f}  MCC={final_metrics['mcc']:.4f}  "
           f"ACC={final_metrics['acc']:.4f}  F1={final_metrics['f1']:.4f}  "
           f"SN={final_metrics['sn']:.4f}  SP={final_metrics['sp']:.4f}")
@@ -359,7 +364,9 @@ def main():
             },
             'tower_oof': {n: compute_metrics(train_labels, oof_preds[n])
                          for n in ['rnafm', 'onehot', 'rgcn']},
-            'tower_test': {n: compute_metrics(test_labels, test_preds[n])
+            'tower_test': {n: compute_metrics(
+                                test_labels, test_preds[n],
+                                threshold=balanced_oof_threshold(train_labels, oof_preds[n]))
                           for n in ['rnafm', 'onehot', 'rgcn']},
             'ensemble_weights': {n: float(w)
                                for n, w in zip(['rnafm', 'onehot', 'rgcn'], auc_w)},

@@ -14,6 +14,23 @@ def find_optimal_mcc(labels, probs):
     return best_mcc, best_thr
 
 
+def balanced_oof_threshold(oof_labels, oof_probs, seed=2026):
+    """Select a decision threshold on a class-balanced out-of-fold subset.
+
+    The test set is 1:1, so a class-balanced subset of the OOF predictions is
+    used to pick the threshold by MCC; the value is then held fixed and applied
+    to the test set, never tuned on evaluation data.
+    """
+    rng = np.random.RandomState(seed)
+    pos = np.where(oof_labels == 1)[0]
+    neg = np.where(oof_labels == 0)[0]
+    n = min(len(pos), len(neg))
+    sub = np.concatenate([rng.choice(pos, n, replace=False),
+                          rng.choice(neg, n, replace=False)])
+    _, thr = find_optimal_mcc(oof_labels[sub], oof_probs[sub])
+    return thr
+
+
 def compute_metrics(labels, probs, threshold=None):
     auc = roc_auc_score(labels, probs)
     if threshold is None:

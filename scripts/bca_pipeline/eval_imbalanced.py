@@ -22,6 +22,10 @@ except ImportError:
 
 OUTPUT_DIR = os.path.join(config.PROJECT_ROOT, "output_imbalanced_eval")
 
+# Balanced out-of-fold decision threshold from the main study; held fixed for
+# every operating ratio so that the threshold is never tuned on the data.
+FIXED_THRESHOLD = 0.485
+
 NUC_MAP = {'A': [1, 0, 0, 0], 'U': [0, 1, 0, 0], 'G': [0, 0, 1, 0], 'C': [0, 0, 0, 1]}
 
 
@@ -242,14 +246,17 @@ def find_optimal_mcc(labels, probs):
     return best_mcc, best_thr
 
 
-def compute_full_metrics(labels, probs):
+def compute_full_metrics(labels, probs, threshold=FIXED_THRESHOLD, report_oracle=False):
     auc = roc_auc_score(labels, probs)
     ap = average_precision_score(labels, probs)
 
     precision, recall, pr_thresholds = precision_recall_curve(labels, probs)
     pr_auc = average_precision_score(labels, probs)
 
-    mcc, threshold = find_optimal_mcc(labels, probs)
+    if threshold is None:
+        mcc, threshold = find_optimal_mcc(labels, probs)
+    else:
+        mcc = matthews_corrcoef(labels, (probs >= threshold).astype(int))
     preds = (probs >= threshold).astype(int)
     acc = accuracy_score(labels, preds)
     f1 = f1_score(labels, preds)
@@ -260,7 +267,7 @@ def compute_full_metrics(labels, probs):
     sn = tp / (tp + fn) if (tp + fn) > 0 else 0.0
     sp = tn / (tn + fp) if (tn + fp) > 0 else 0.0
 
-    return {
+    out = {
         'auc': auc, 'ap': ap, 'pr_auc': pr_auc,
         'mcc': mcc, 'threshold': threshold,
         'acc': acc, 'f1': f1, 'sn': sn, 'sp': sp,
@@ -268,6 +275,11 @@ def compute_full_metrics(labels, probs):
         'n_neg': int(len(labels) - labels.sum()),
         'ratio': f"1:{int(len(labels) / max(labels.sum(), 1))}",
     }
+    if report_oracle:
+        oracle_mcc, oracle_thr = find_optimal_mcc(labels, probs)
+        out['oracle_thr'] = oracle_thr
+        out['oracle_mcc'] = oracle_mcc
+    return out
 
 
 def make_serializable(obj):
@@ -383,12 +395,13 @@ def main():
         print(f"\n  Ensemble weights: RNA-FM={weights[0]:.4f}, "
               f"BiLSTM={weights[1]:.4f}, RGCN={weights[2]:.4f}")
 
-        metrics = compute_full_metrics(all_labels, ensemble_preds)
+        metrics = compute_full_metrics(all_labels, ensemble_preds, report_oracle=True)
         print(f"\n  --- Results (ratio {ratio_key}) ---")
         print(f"    AUC     = {metrics['auc']:.4f}")
         print(f"    AP      = {metrics['ap']:.4f}")
         print(f"    PR-AUC  = {metrics['pr_auc']:.4f}")
-        print(f"    MCC     = {metrics['mcc']:.4f}  (threshold={metrics['threshold']:.2f})")
+        print(f"    MCC     = {metrics['mcc']:.4f}  (fixed threshold={metrics['threshold']:.2f}; "
+              f"oracle threshold={metrics['oracle_thr']:.2f})")
         print(f"    F1      = {metrics['f1']:.4f}")
         print(f"    SN      = {metrics['sn']:.4f}")
         print(f"    SP      = {metrics['sp']:.4f}")
