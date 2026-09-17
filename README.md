@@ -21,7 +21,7 @@ TriTower-m6Am combines three complementary towers through AUC-weighted ensemble 
 | scikit-learn | 1.3+ |
 | NumPy | 1.24+ |
 
-**Hardware:** Tested on a single NVIDIA GPU with 16 GB VRAM and 128 GB system RAM. Training on CPU is possible but significantly slower.
+**Hardware:** Tested on a single NVIDIA RTX 3060 (12 GB) with 16 GB system RAM. Training on CPU is possible but significantly slower.
 
 ## Installation
 
@@ -129,6 +129,20 @@ This will train all three towers with 5-fold cross-validation and produce an AUC
 ### Configuration
 
 Edit `configs/default.yaml` to adjust hyperparameters, data paths, and training settings.
+
+## Runtime Benchmark
+
+All entries were measured in one session on the same NVIDIA RTX 3060 (12 GB) with batch size 1, using 3 warm-up passes followed by 10 timed passes (CUDA events); parameters are the trainable parameter count.
+
+| Model | Parameters | Inference time (ms) | Peak GPU memory (MB) |
+|---|---|---|---|
+| RNA-FM tower | 140,974 | 2.09 | 9.89 |
+| One-Hot tower | 143,489 | 0.80 | 41.62 |
+| RGCN tower | 45,203 | 7.49 | 9.44 |
+| **TriTower ensemble** | **329,666** | **10.38** | **41.62** |
+| **DTC-m6Am** | **1,446,256** | **8.34** | **21.29** |
+
+TriTower-m6Am uses 4.4 times fewer parameters than DTC-m6Am. The comparison is favourable to TriTower-m6Am in one respect: its 10.38 ms covers only the three downstream encoders and excludes RNAfold secondary-structure prediction and RNA-FM embedding extraction, whereas DTC-m6Am requires neither step; the reported ratio should be read as a lower bound on TriTower-m6Am's runtime cost.
 
 ## Citation
 
