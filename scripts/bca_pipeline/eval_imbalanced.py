@@ -22,8 +22,6 @@ except ImportError:
 
 OUTPUT_DIR = os.path.join(config.PROJECT_ROOT, "output_imbalanced_eval")
 
-# Balanced out-of-fold decision threshold from the main study; held fixed for
-# every operating ratio so that the threshold is never tuned on the data.
 FIXED_THRESHOLD = 0.485
 
 NUC_MAP = {'A': [1, 0, 0, 0], 'U': [0, 1, 0, 0], 'G': [0, 0, 1, 0], 'C': [0, 0, 0, 1]}

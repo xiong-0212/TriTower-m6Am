@@ -332,8 +332,6 @@ def main():
     oof_ensemble = (oof_arr * auc_w).sum(axis=1)
     final_probs = (test_arr * auc_w).sum(axis=1)
 
-    # Threshold is selected once on the class-balanced OOF subset and held
-    # fixed for the test set (never tuned on evaluation data).
     final_thr = balanced_oof_threshold(train_labels, oof_ensemble)
     final_metrics = compute_metrics(test_labels, final_probs, threshold=final_thr)
     print(f"\n  Balanced-OOF Threshold: {final_thr:.2f}")
