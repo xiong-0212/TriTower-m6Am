@@ -1,6 +1,6 @@
 # TriTower-m6Am
 
-A triple-tower heterogeneous deep learning architecture for m6Am site prediction, integrating semantic (RNA-FM), sequential (One-Hot BiLSTM), and structural (RGCN) representations of RNA sequences.
+A triple-tower heterogeneous deep learning architecture for mRNA m6Am site prediction, integrating semantic (RNA-FM), sequential (One-Hot BiLSTM), and structural (RGCN) representations of RNA sequences.
 
 ## Overview
 
@@ -152,7 +152,7 @@ If you use TriTower-m6Am in your research, please cite:
 @article{xiong2025tritower,
   title={TriTower-m6Am: a triple-tower heterogeneous deep learning architecture
          integrating semantic, sequential, and structural information for
-         N6,2'-O-dimethyladenosine site prediction},
+         mRNA N6,2'-O-dimethyladenosine site prediction},
   author={Xiong, Kaifeng and Jia, Jianhua},
   journal={},
   year={2025}
