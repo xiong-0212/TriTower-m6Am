@@ -35,13 +35,20 @@ Additional dependencies:
 
 ## Pretrained Checkpoints
 
-Download the trained TriTower-m6Am model checkpoints (seed=123, 5-fold CV) from [GitHub Releases](https://github.com/xiong-0212/TriTower-m6Am/releases):
+Download the trained TriTower-m6Am model checkpoints (seed=123, 5-fold CV)
+from the [v1.0.0 release](https://github.com/xiong-0212/TriTower-m6Am/releases/tag/v1.0.0):
 
 ```bash
-# Download TriTower-m6Am_checkpoints.zip from Releases, then:
+# Download TriTower-m6Am_checkpoints.zip from the v1.0.0 release, then:
 mkdir -p output
 unzip TriTower-m6Am_checkpoints.zip -d output/
 # Results in: output/ckpt_seed123/
+```
+
+Release asset SHA-256:
+
+```text
+F02A414315F519001DC30CA10FBBCB29FE14CAEB097C7EF73E5671E4DA863453
 ```
 
 With checkpoints in place, training will automatically detect them and skip to evaluation (`-- SKIP (checkpoint found)`).
@@ -132,30 +139,42 @@ Edit `configs/default.yaml` to adjust hyperparameters, data paths, and training 
 
 ## Runtime Benchmark
 
-All entries were measured in one session on the same NVIDIA RTX 3060 (12 GB) with batch size 1, using 3 warm-up passes followed by 10 timed passes (CUDA events); parameters are the trainable parameter count.
+All entries were measured on the same NVIDIA RTX 3060 (12 GB) with batch
+size 1, using 20 warm-up passes followed by 200 timed passes (CUDA events).
+Each component was benchmarked in its own process, and the reported times
+are medians across three independent sessions. Parameters are the trainable
+parameter count of each downstream encoder; the frozen RNA-FM backbone is
+excluded.
 
 | Model | Parameters | Inference time (ms) | Peak GPU memory (MB) |
 |---|---|---|---|
-| RNA-FM tower | 140,974 | 2.09 | 9.89 |
-| One-Hot tower | 143,489 | 0.80 | 41.62 |
-| RGCN tower | 45,203 | 7.49 | 9.44 |
-| **TriTower ensemble** | **329,666** | **10.38** | **41.62** |
-| **DTC-m6Am** | **1,446,256** | **8.34** | **21.29** |
+| RNA-FM tower | 140,974 | 2.24 +/- 0.41 | 9.89 |
+| One-Hot tower | 143,489 | 0.94 +/- 0.19 | 41.52 |
+| RGCN tower | 45,203 | 8.61 +/- 0.68 | 9.33 |
+| **TriTower ensemble** | **329,666** | **12.41 +/- 1.26** | **42.35** |
+| **DTC-m6Am** | **1,446,256** | **3.6-8.5** | **15.63** |
 
-TriTower-m6Am uses 4.4 times fewer parameters than DTC-m6Am. The comparison is favourable to TriTower-m6Am in one respect: its 10.38 ms covers only the three downstream encoders and excludes RNAfold secondary-structure prediction and RNA-FM embedding extraction, whereas DTC-m6Am requires neither step; the reported ratio should be read as a lower bound on TriTower-m6Am's runtime cost.
+The ensemble row covers only the three downstream encoders. It excludes
+two per-window preprocessing steps required for deployment. RNAfold adds
+2.81 ms per window, and a single RNA-FM embedding extraction at batch size 1
+adds 18.33 ms and peaks at 391.46 MB. The complete single-window pipeline is
+therefore approximately 33.6 ms with a peak of about 391 MB. DTC-m6Am was
+bimodal across isolated runs (about 3.6 ms or 8.5 ms), so its latency is
+reported as a range.
 
 ## Citation
 
 If you use TriTower-m6Am in your research, please cite:
 
 ```bibtex
-@article{xiong2025tritower,
+@article{xiong2026tritower,
   title={TriTower-m6Am: a triple-tower heterogeneous deep learning architecture
          integrating semantic, sequential, and structural information for
          mRNA N6,2'-O-dimethyladenosine site prediction},
   author={Xiong, Kaifeng and Jia, Jianhua},
-  journal={},
-  year={2025}
+  journal={PLOS Computational Biology},
+  year={2026},
+  note={In press}
 }
 ```
 
