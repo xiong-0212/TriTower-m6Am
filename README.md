@@ -10,6 +10,66 @@ TriTower-m6Am combines three complementary towers through AUC-weighted ensemble 
 - **One-Hot BiLSTM Tower**: Bidirectional LSTM capturing sequential dependencies from one-hot encoded nucleotides
 - **RGCN Tower**: Relational Graph Convolutional Network modeling RNA secondary structure with typed edges (backbone, base-pairing, neighborhood)
 
+## Implementation Details
+
+The exact layer definitions are implemented in [model.py](model.py), the
+training and cross-validation procedure in [train.py](train.py), and the
+default hyperparameters in [configs/default.yaml](configs/default.yaml).
+
+### Inputs and graph construction
+
+Each sample is a 41-nt window centered on the candidate adenosine. The three
+towers receive the same window as an RNA-FM tensor of shape `41 x 640`, a
+one-hot tensor of shape `41 x 4`, and a graph with 41 nodes and 21 structural
+features per node. The graph contains directed backbone edges `(i, i+1)`,
+base-pairing edges parsed from the RNAfold dot-bracket string, and neighborhood
+edges `(i, i+2)`.
+
+### RNA-FM tower
+
+The frozen RNA-FM embedding is normalized with LayerNorm and projected from
+640 to 96 dimensions with a linear layer and GELU. Three parallel 1-D
+convolutions with kernels 3, 5, and 7 each produce 48 channels, followed by
+BatchNorm1d and GELU. The 144 concatenated channels are projected back to 48
+dimensions, followed by GELU and Dropout(0.4). BellPooling uses position 20 as
+the initial center and initializes its logits from a normalized Cauchy-type
+prior (`b=5`, exponent `c=2`, scale `d=1`). The pooled 48-dimensional vector is
+classified by `48 -> 32 -> 1` with GELU.
+
+### One-Hot BiLSTM tower
+
+The sequential tower uses a two-layer bidirectional LSTM with 64 hidden units
+per direction and Dropout(0.4). The hidden state at the central position 20
+provides a 128-dimensional summary, which is classified by
+`128 -> 64 -> 1` with GELU.
+
+### RGCN tower
+
+The 21-dimensional node features are projected to 64 dimensions with
+`Linear -> LayerNorm -> GELU -> Dropout(0.4)`. Two RGCNConv layers use
+64 channels, three relation types, and three basis matrices, each with a
+residual connection, LayerNorm, GELU, and Dropout(0.4). Edge dropout is 0.1
+during training. Global mean pooling is concatenated with the center-node
+embedding, projected from 128 to 64 dimensions with
+`Linear -> LayerNorm -> GELU`, and classified by `64 -> 32 -> 1` with GELU.
+
+### Five-fold cross-validation
+
+Each tower is trained with `StratifiedKFold(n_splits=5, shuffle=True,
+random_state=123)`. For the 40,700 training windows, each fold uses 32,560
+samples for training and 8,140 for validation while preserving the class
+ratio. Out-of-fold predictions are assembled across the five validation folds,
+and the five fold-specific test predictions are averaged.
+
+The default optimization setup is AdamW (`lr=5e-4`, `weight_decay=5e-3`),
+batch size 64, up to 150 epochs, 10 warm-up epochs followed by cosine
+annealing, early stopping with patience 50 on balanced validation MCC, EMA
+decay 0.990, label smoothing 0.08, and a positive-class weight cap of 3.0.
+Fold-specific seeds are derived from the base seed 123 for each tower. Tower
+weights for the final ensemble are proportional to the out-of-fold AUC of each
+tower, and the operating threshold is selected from balanced out-of-fold
+predictions.
+
 ## Environment
 
 | Component | Version |
